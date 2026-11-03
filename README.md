@@ -100,11 +100,11 @@ tests/                    pytest checks (state prep, QAE accuracy, Ising mapping
 
 ## References
 
-* G. Brassard, P. Hoyer, M. Mosca, A. Tapp. Quantum amplitude amplification and estimation. 2002.
-* S. Woerner, D. J. Egger. Quantum risk analysis. npj Quantum Information 5, 15 (2019).
-* N. Stamatopoulos et al. Option pricing using quantum computers. Quantum 4, 291 (2020).
-* Y. Suzuki et al. Amplitude estimation without phase estimation. Quantum Inf. Process. 19, 75 (2020).
-* E. Farhi, J. Goldstone, S. Gutmann. A quantum approximate optimization algorithm. arXiv:1411.4028.
-* S. Hadfield et al. From the QAOA to a quantum alternating operator ansatz. Algorithms 12, 34 (2019).
-* A. Baertschi, S. Eidenbenz. Deterministic preparation of Dicke states. 2019.
-* R. N. Mantegna. Hierarchical structure in financial markets. Eur. Phys. J. B 11, 193 (1999).
+* G. Brassard, P. Hoyer, M. Mosca, A. Tapp. Quantum amplitude amplification and estimation. 2002. [arXiv:quant-ph/0005055](https://arxiv.org/abs/quant-ph/0005055)
+* S. Woerner, D. J. Egger. Quantum risk analysis. npj Quantum Information 5, 15 (2019). [arXiv:1806.06893](https://arxiv.org/abs/1806.06893)
+* N. Stamatopoulos et al. Option pricing using quantum computers. Quantum 4, 291 (2020). [arXiv:1905.02666](https://arxiv.org/abs/1905.02666)
+* Y. Suzuki et al. Amplitude estimation without phase estimation. Quantum Inf. Process. 19, 75 (2020). [arXiv:1904.10246](https://arxiv.org/abs/1904.10246)
+* E. Farhi, J. Goldstone, S. Gutmann. A quantum approximate optimization algorithm. 2014. [arXiv:1411.4028](https://arxiv.org/abs/1411.4028)
+* S. Hadfield et al. From the quantum approximate optimization algorithm to a quantum alternating operator ansatz. Algorithms 12, 34 (2019). [arXiv:1709.03489](https://arxiv.org/abs/1709.03489)
+* A. Baertschi, S. Eidenbenz. Deterministic preparation of Dicke states. 2019. [arXiv:1904.07358](https://arxiv.org/abs/1904.07358)
+* R. N. Mantegna. Hierarchical structure in financial markets. Eur. Phys. J. B 11, 193 (1999). [arXiv:cond-mat/9802256](https://arxiv.org/abs/cond-mat/9802256)
