@@ -38,52 +38,83 @@ passing `--prices-csv path/to/prices.csv` to scripts 03 and 04.
 
 ## Module A: option pricing with quantum amplitude estimation
 
-1. `finance/black_scholes.py` discretizes the risk-neutral log-normal distribution of S_T onto
-   2^n grid points (equal bins over mean +/- 5 std, exact bin probabilities from the CDF), and
+1. `finance/black_scholes.py` discretizes the risk-neutral log-normal distribution of $`S_T`$ onto
+   $`2^n`$ grid points (equal bins over mean $`\pm 5`$ std, exact bin probabilities from the CDF), and
    gives the Black-Scholes reference price. With the default 5 price qubits the grid price is
    within about 0.5% of Black-Scholes.
-2. `qae/operators.py` builds
-   * **A**: `StatePreparation` loads sqrt(p_i) on n price qubits, then a uniformly controlled
-     RY sets P(objective = 1 | i) = f_i = payoff_i / max payoff. So P(objective = 1) = a = E[f].
-   * **Q = -A S_0 A^dagger S_chi**, whose eigenphases are +-2 theta with a = sin^2(theta).
-3. `qae/canonical.py` runs **quantum phase estimation on Q** with m evaluation qubits
-   (controlled Q^(2^j) followed by an inverse QFT); the outcome y gives a = sin^2(pi y / 2^m).
-   Error scales as O(1/M), M = 2^m, versus O(1/sqrt(N)) for Monte Carlo.
+2. `qae/operators.py` builds the two operators used by every estimator:
+
+```math
+\mathcal{A}\,|0\rangle_n|0\rangle = \sum_i \sqrt{p_i}\,|i\rangle\left(\sqrt{1-f_i}\,|0\rangle + \sqrt{f_i}\,|1\rangle\right),
+\qquad f_i = \frac{\max(S_i - K,\,0)}{\max_j \max(S_j - K,\,0)}
+```
+
+   `StatePreparation` loads $`\sqrt{p_i}`$ on the $`n`$ price qubits and a uniformly controlled
+   $`R_Y`$ rotates the objective qubit, so $`P(\text{objective}=1) = a = \mathbb{E}[f]`$ and the
+   option price is $`e^{-rT}\,\max_j(S_j-K)^+\,a`$. The Grover operator is
+
+```math
+\mathcal{Q} = -\,\mathcal{A}\,S_0\,\mathcal{A}^\dagger S_\chi, \qquad
+\text{eigenphases } \pm 2\theta, \qquad a = \sin^2\theta .
+```
+
+3. `qae/canonical.py` runs **quantum phase estimation on $`\mathcal{Q}`$** with $`m`$ evaluation qubits
+   (controlled $`\mathcal{Q}^{2^j}`$ followed by an inverse QFT). An outcome $`y`$ gives
+   $`\hat a = \sin^2(\pi y / M)`$ with $`M = 2^m`$, so the error scales as $`O(1/M)`$ versus
+   $`O(1/\sqrt{N})`$ for Monte Carlo.
 4. `qae/mlae.py` implements **maximum-likelihood amplitude estimation** (Suzuki et al. 2020): no
-   QPE register, circuits Q^k A for k = 0, 1, 2, 4, ..., and a likelihood fit for theta. This is
-   the variant that suits near-term hardware.
+   QPE register, only circuits $`\mathcal{Q}^{k}\mathcal{A}`$ for $`k = 0, 1, 2, 4, \dots`$ and a fit of
+
+```math
+\hat\theta = \arg\max_\theta \prod_k \sin^{2h_k}\!\big((2k+1)\theta\big)\,\cos^{2(N-h_k)}\!\big((2k+1)\theta\big),
+```
+
+   where $`h_k`$ is the number of "good" outcomes out of $`N`$ shots. This is the variant that
+   suits near-term hardware.
 5. `qae/resources.py` transpiles the real gate-level circuits to {CX, RZ, SX, X} and reports
    qubits, CNOT count, and depth (the same resource-estimation mindset as fault-tolerant costing,
    applied to a finance workload).
 
-Oracle calls are counted as applications of A or A^dagger: a shot with k Grover iterations
-costs 2k + 1 calls. Canonical QAE uses 10 shots per run by default (`--qae-shots`) and keeps
-the most frequent outcome. Its exact outcome distribution is computed from the spectrum of Q
-(`qpe_distribution_eigen`, a Fejer-kernel formula) and cross-checked against full circuit
-simulation in the tests. For simulation speed, `canonical_qae` and `mlae` use dense matrices for
-Q^(2^j); `canonical_qae_circuit(..., use_unitary=False)` keeps the gate-level decomposition.
+Oracle calls are counted as applications of $`\mathcal{A}`$ or $`\mathcal{A}^\dagger`$: a shot with
+$`k`$ Grover iterations costs $`2k+1`$ calls. Canonical QAE uses 10 shots per run by default
+(`--qae-shots`) and keeps the most frequent outcome. Its exact outcome distribution is computed from
+the spectrum of $`\mathcal{Q}`$ (`qpe_distribution_eigen`): writing
+$`\mathcal{A}|0\rangle = \sum_j c_j |v_j\rangle`$ with $`\mathcal{Q}|v_j\rangle = e^{2\pi i \varphi_j}|v_j\rangle`$,
+
+```math
+P(y) = \sum_j |c_j|^2 \left| \frac{1}{M} \sum_{k=0}^{M-1} e^{2\pi i k (\varphi_j - y/M)} \right|^2 ,
+```
+
+which the tests cross-check against full circuit simulation. For simulation speed, `canonical_qae`
+and `mlae` use dense matrices for $`\mathcal{Q}^{2^j}`$; `canonical_qae_circuit(..., use_unitary=False)`
+keeps the gate-level decomposition.
 
 Things worth discussing in results: canonical QAE estimates are restricted to the grid
-sin^2(pi y / M), so the error can plateau when the true a sits between grid points; MLAE
+$`\sin^2(\pi y/M)`$, so the error can plateau when the true $`a`$ sits between grid points; MLAE
 avoids that discretization. The grid price also differs from Black-Scholes because of the
-2^n-point discretization, which is a separate error source from the estimator.
+$`2^n`$-point discretization, which is a separate error source from the estimator.
 
 ## Module B: QAOA for portfolio optimization and Max-Cut
 
-* `qaoa/qubo.py`: QUBO energy, QUBO to Ising mapping (x = (1 - z) / 2), brute force, and
+* `qaoa/qubo.py`: QUBO energy, QUBO to Ising mapping $`x_i = (1 - z_i)/2`$, brute force, and
   single-bit-flip simulated annealing.
-* `qaoa/portfolio.py`: min q x^T Sigma x - mu^T x + lambda (sum x - B)^2, pick B of n assets.
-* `qaoa/maxcut.py`: Mantegna distance d_ij = sqrt(2 (1 - rho_ij)); a maximum cut minimizes
+* `qaoa/portfolio.py`: pick $`B`$ of $`n`$ assets ($`x_i = 1`$ means asset $`i`$ is held) by minimizing
+
+```math
+E(x) = q\,x^\top \Sigma\, x \;-\; \mu^\top x \;+\; \lambda \Big(\sum_i x_i - B\Big)^2 .
+```
+
+* `qaoa/maxcut.py`: Mantegna distance $`d_{ij} = \sqrt{2(1-\rho_{ij})}`$; a maximum cut minimizes
   within-group distance, so it splits assets into two internally correlated groups.
 * `qaoa/solver.py`: PennyLane QAOA (`qml.qaoa.cost_layer` / `mixer_layer`), Adam with several
   random starts, `lightning.qubit` with adjoint differentiation.
-  * `mixer="x"`: standard mixer from |+>^n, budget enforced by the penalty term.
-  * `mixer="xy"`: ring XY mixer from the Dicke state, so every sample satisfies the budget
-    and no penalty is needed (the Dicke state is loaded as an amplitude vector in simulation).
+  * `mixer="x"`: standard mixer from $`|+\rangle^{\otimes n}`$, budget enforced by the penalty term.
+  * `mixer="xy"`: ring XY mixer from the Dicke state $`|D^n_B\rangle`$, so every sample satisfies
+    the budget and no penalty is needed (the Dicke state is loaded as an amplitude vector in simulation).
 
-Metrics: P(optimal) is the probability of sampling the optimal portfolio and is comparable
-across mixers. The approximation ratio (E_max - <E>) / (E_max - E_min) is taken over all
-bitstrings for the X mixer (penalized infeasible states inflate it) and over feasible
+Metrics: $`P(\text{optimal})`$ is the probability of sampling the optimal portfolio and is comparable
+across mixers. The approximation ratio $`(E_{\max} - \langle E\rangle)/(E_{\max} - E_{\min})`$ is taken
+over all bitstrings for the X mixer (penalized infeasible states inflate it) and over feasible
 bitstrings for the XY mixer, so compare ratios only within one mixer.
 
 ## Layout
