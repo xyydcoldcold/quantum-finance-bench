@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qfb"
+version = "0.1.0"
+description = "Quantum Finance Bench: quantum amplitude estimation for option pricing and QAOA for portfolio optimization"
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "pandas", "matplotlib", "networkx", "qiskit>=2.0", "qiskit-aer>=0.17", "pennylane>=0.40"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

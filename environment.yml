@@ -1,0 +1,18 @@
+name: qfb
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - networkx
+  - pytest
+  - jupyterlab
+  - pip:
+      - qiskit>=2.0
+      - qiskit-aer>=0.17
+      - pennylane>=0.40
+      - -e .

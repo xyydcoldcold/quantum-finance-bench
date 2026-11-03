@@ -1,0 +1,6 @@
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+results/*
+!results/.gitkeep
+.DS_Store
